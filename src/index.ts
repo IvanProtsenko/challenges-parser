@@ -1,8 +1,9 @@
 import { duration } from 'moment';
 import env from './utils/env';
 import { handleUnexpectedExit, registerExitListener } from './utils/utils';
-import ChallengeParser from './parser';
+import ChallengeParser from './futwizParser';
 import logger from './monitoring/logger';
+import ChallengeFutbinParser from './futbinParser';
 
 main().catch(handleUnexpectedExit);
 setTimeout(() => {
@@ -22,7 +23,9 @@ async function parseChallenges() {
   //   await proxyManager.init();
   //   const parsingPauseDelay = config.parsingPausePerProxySet(proxyManager.proxySets);
 
-  const fbParser = new ChallengeParser();
+  const fwParser = new ChallengeParser();
+  const fbParser = new ChallengeFutbinParser();
 
+  // await fwParser.requestTradeableChallenges();
   await fbParser.requestTradeableChallenges();
 }
