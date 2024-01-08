@@ -24,5 +24,5 @@ async function parseChallenges() {
 
   const fbParser = new ChallengeParser();
 
-  await fbParser.requestChallenges();
+  await fbParser.requestTradeableChallenges();
 }

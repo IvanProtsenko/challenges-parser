@@ -43,42 +43,37 @@ export default class ChallengeParser {
       .asMilliseconds()
   ) {}
 
-  async requestChallenges(): Promise<any> {
+  public async requestTradeableChallenges() {
     try {
-      await this.requestTradeableChallenges()
-    } catch (err) {
-      console.error(`unhandled error`, err);
-      return null;
+      const url = `${this.futwizUrl}/en/fc24/squad-building-challenges`;
+      const response = await axios.get(url);
+      const selector = cheerio.load(response.data);
+      const blocks = selector(".sbc-block").toArray().map((el: any) => selector(el));
+  
+      const sets: SbcSet[] = [];
+      for(const block of blocks) {
+        sets.push(this.convertElementToSet(block))
+      }
+      const tradeableSets = sets.filter(set => set.tradeable === true);
+      
+      for(const tradeableSet of tradeableSets) {
+        const challenges = await this.getSetChallenges(tradeableSet); // maybe promise all
+        tradeableSet.challenges = challenges;
+      }
+      for(const tradeableSet of tradeableSets) {
+        console.log(tradeableSet.challenges);
+      }
+  
+      if (!response || response.data.error) {
+        console.error(`error`);
+        return null;
+      }
+    } catch(err: any) {
+      logger.error('error while requesting sbc', {meta: err})
     }
   }
 
-  async requestTradeableChallenges() {
-    const url = `${this.futwizUrl}/en/fc24/squad-building-challenges`;
-    const response = await axios.get(url);
-    const selector = cheerio.load(response.data);
-    const blocks = selector(".sbc-block").toArray().map((el: any) => selector(el));
-
-    const sets: SbcSet[] = [];
-    for(const block of blocks) {
-      sets.push(this.convertElementToSet(block))
-    }
-    const tradeableSets = sets.filter(set => set.tradeable === true);
-    
-    for(const tradeableSet of tradeableSets) {
-      const challenges = await this.getSetChallenges(tradeableSet); // maybe promise all
-      tradeableSet.challenges = challenges;
-    }
-    for(const tradeableSet of tradeableSets) {
-      console.log(tradeableSet);
-    }
-
-    if (!response || response.data.error) {
-      console.error(`error`);
-      return null;
-    }
-  }
-
-  async getSetChallenges(sbcSet: SbcSet) {
+  private async getSetChallenges(sbcSet: SbcSet) {
     const url = sbcSet.url;
     const response = await axios.get(url);
     const selector = cheerio.load(response.data);
@@ -86,13 +81,13 @@ export default class ChallengeParser {
 
     const challenges: SbcChallenge[] = [];
     for(const block of blocks) {
-      challenges.push(this.convertElementToChallenge(block, sbcSet))
+      challenges.push(await this.convertElementToChallenge(block, sbcSet));
     }
 
     return challenges;
   }
 
-  convertElementToSet(block: cheerio.Cheerio<any>): SbcSet {
+  private convertElementToSet(block: cheerio.Cheerio<any>): SbcSet {
     const { packName, packAmount } = this.getPackAttributes(block);
 
     return {
@@ -104,29 +99,33 @@ export default class ChallengeParser {
     };
   }
 
-  convertElementToChallenge(block: cheerio.Cheerio<any>, sbcSet: SbcSet): SbcChallenge {
+  private async convertElementToChallenge(block: cheerio.Cheerio<any>, sbcSet: SbcSet): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributes(block);
+    const challengeUrl = this.getChallengeURl(block);
+    const conditionsFromFutwiz = await this.getChallengeConditions(challengeUrl);
+    const conditionsOperated = this.operateConditions(conditionsFromFutwiz)
 
     return {
-      url: this.getChallengeURl(block),
+      url: challengeUrl,
       name: this.getSbcNameFromPage(block),
       tradeable: this.getIfPackTradeable(block) || sbcSet.tradeable,
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,
+      conditions: conditionsOperated,
     };
   }
 
-  getSbcURl(block: cheerio.Cheerio<any>): string {
+  private getSbcURl(block: cheerio.Cheerio<any>): string {
     const onclickUrl = block.parent().attr('onclick') || '';
     return this.futwizUrl + onclickUrl.split("'")[1];
   }
 
-  getChallengeURl(block: cheerio.Cheerio<any>): string {
+  private getChallengeURl(block: cheerio.Cheerio<any>): string {
     const aHrefUrl = block.find('.sbc-info').find('a').attr('href') || '';
     return this.futwizUrl + aHrefUrl;
   }
 
-  getPackAttributes(block: cheerio.Cheerio<any>): { packName: string, packAmount: number } {
+  private getPackAttributes(block: cheerio.Cheerio<any>): { packName: string, packAmount: number } {
     const packAttrArray: string = block
       .find('.sbc-rewards').first().text().split('\n')
       .filter(el => el !== '')[0];
@@ -140,11 +139,23 @@ export default class ChallengeParser {
     }
   }
 
-  getSbcNameFromPage(block: cheerio.Cheerio<any>): string {
+  private async getChallengeConditions(url: string): Promise<string[]> {
+    const response = await axios.get(url);
+    const selector = cheerio.load(response.data);
+    const conditionsText = selector(".sbc-req").toArray().map((el: any) => selector(el).text());
+    return conditionsText.map(conditionText => conditionText.split('\n').filter(splittedText => splittedText !== '').join());
+  }
+
+  // TODO interfaces & operating
+  private operateConditions(conditions: string[]): string[] {
+    return conditions;
+  }
+
+  private getSbcNameFromPage(block: cheerio.Cheerio<any>): string {
     return block.find('.sbc-data').find('.sbc-name').first().text();
   }
 
-  getIfPackTradeable(block: cheerio.Cheerio<any>): boolean {
+  private getIfPackTradeable(block: cheerio.Cheerio<any>): boolean {
     return block.find('.sbc-rewards').first().text().includes('Tradeable') ? true : false;
   }
 }

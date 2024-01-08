@@ -1,5 +1,5 @@
-import SbcSet from "./Set";
+import BaseFields from "./BaseFields";
 
-export default interface SbcChallenge extends SbcSet {
-    conditions?: string
+export default interface SbcChallenge extends BaseFields {
+    conditions?: string[]
 }
