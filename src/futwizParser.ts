@@ -23,28 +23,30 @@ export default class ChallengeParser {
       const url = `${this.futwizUrl}/en/fc24/squad-building-challenges`;
       const response = await axios.get(url);
       const selector = cheerio.load(response.data);
-      const blocks = selector(".sbc-block").toArray().map((el: any) => selector(el));
-  
+      const blocks = selector('.sbc-block')
+        .toArray()
+        .map((el: any) => selector(el));
+
       const sets: SbcSet[] = [];
-      for(const block of blocks) {
-        sets.push(this.convertElementToSet(block))
+      for (const block of blocks) {
+        sets.push(this.convertElementToSet(block));
       }
-      const tradeableSets = sets.filter(set => set.tradeable === true);
-      
-      for(const tradeableSet of tradeableSets) {
+      const tradeableSets = sets.filter((set) => set.tradeable === true);
+
+      for (const tradeableSet of tradeableSets) {
         const challenges = await this.getSetChallenges(tradeableSet); // maybe promise all
         tradeableSet.challenges = challenges;
       }
-      for(const tradeableSet of tradeableSets) {
+      for (const tradeableSet of tradeableSets) {
         console.log(tradeableSet.challenges);
       }
-  
+
       if (!response || response.data.error) {
         console.error(`error`);
         return null;
       }
-    } catch(err: any) {
-      logger.error('error while requesting sbc', {meta: err})
+    } catch (err) {
+      logger.error('error while requesting sbc', { meta: err });
     }
   }
 
@@ -52,10 +54,12 @@ export default class ChallengeParser {
     const url = sbcSet.url;
     const response = await axios.get(url);
     const selector = cheerio.load(response.data);
-    const blocks = selector(".sbc-block").toArray().map((el: any) => selector(el));
+    const blocks = selector('.sbc-block')
+      .toArray()
+      .map((el: any) => selector(el));
 
     const challenges: SbcChallenge[] = [];
-    for(const block of blocks) {
+    for (const block of blocks) {
       challenges.push(await this.convertElementToChallenge(block, sbcSet));
     }
 
@@ -74,14 +78,19 @@ export default class ChallengeParser {
     };
   }
 
-  private async convertElementToChallenge(block: cheerio.Cheerio<any>, sbcSet: SbcSet): Promise<SbcChallenge> {
+  private async convertElementToChallenge(
+    block: cheerio.Cheerio<any>,
+    sbcSet: SbcSet
+  ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributes(block);
     const challengeUrl = this.getChallengeURl(block);
-    const conditionsFromFutwiz = await this.getChallengeConditions(challengeUrl);
-    const conditionsOperated = this.operateConditions(conditionsFromFutwiz)
+    const conditionsFromFutwiz = await this.getChallengeConditions(
+      challengeUrl
+    );
+    const conditionsOperated = this.operateConditions(conditionsFromFutwiz);
 
     return {
-      url: challengeUrl,
+      // url: challengeUrl,
       name: this.getSbcNameFromPage(block),
       tradeable: this.getIfPackTradeable(block) || sbcSet.tradeable,
       pack_name: packName || sbcSet.pack_name,
@@ -96,16 +105,25 @@ export default class ChallengeParser {
   }
 
   private getChallengeURl(block: cheerio.Cheerio<any>): string {
-    const aHrefUrl = block.find('.sbc-info').find('a').attr('href') || '';
+    const aHrefUrl =
+      block
+        .find('.sbc-info')
+        .find('a')
+        .attr('href') || '';
     return this.futwizUrl + aHrefUrl;
   }
 
-  private getPackAttributes(block: cheerio.Cheerio<any>): { packName: string, packAmount: number } {
+  private getPackAttributes(
+    block: cheerio.Cheerio<any>
+  ): { packName: string; packAmount: number } {
     const packAttrArray: string = block
-      .find('.sbc-rewards').first().text().split('\n')
-      .filter(el => el !== '')[0];
-    
-    if(packAttrArray) {
+      .find('.sbc-rewards')
+      .first()
+      .text()
+      .split('\n')
+      .filter((el) => el !== '')[0];
+
+    if (packAttrArray) {
       const packName = packAttrArray.split(' x ')[0];
       const packAmount = Number(packAttrArray.split(' x ')[1]);
       return { packName, packAmount };
@@ -117,8 +135,15 @@ export default class ChallengeParser {
   private async getChallengeConditions(url: string): Promise<string[]> {
     const response = await axios.get(url);
     const selector = cheerio.load(response.data);
-    const conditionsText = selector(".sbc-req").toArray().map((el: any) => selector(el).text());
-    return conditionsText.map(conditionText => conditionText.split('\n').filter(splittedText => splittedText !== '').join());
+    const conditionsText = selector('.sbc-req')
+      .toArray()
+      .map((el: any) => selector(el).text());
+    return conditionsText.map((conditionText) =>
+      conditionText
+        .split('\n')
+        .filter((splittedText) => splittedText !== '')
+        .join()
+    );
   }
 
   // TODO interfaces & operating
@@ -127,10 +152,20 @@ export default class ChallengeParser {
   }
 
   private getSbcNameFromPage(block: cheerio.Cheerio<any>): string {
-    return block.find('.sbc-data').find('.sbc-name').first().text();
+    return block
+      .find('.sbc-data')
+      .find('.sbc-name')
+      .first()
+      .text();
   }
 
   private getIfPackTradeable(block: cheerio.Cheerio<any>): boolean {
-    return block.find('.sbc-rewards').first().text().includes('Tradeable') ? true : false;
+    return block
+      .find('.sbc-rewards')
+      .first()
+      .text()
+      .includes('Tradeable')
+      ? true
+      : false;
   }
 }

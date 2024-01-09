@@ -8,7 +8,9 @@ export function registerExitListener() {
 }
 
 export function handleUnexpectedExit(error: any) {
-  logger.error('FATAL ERROR', { error: { message: error.message, stack: error.stack } });
+  logger.error('FATAL ERROR', {
+    error: { message: error.message, stack: error.stack },
+  });
   setTimeout(() => process.exit(-1), 5000);
 }
 
@@ -19,7 +21,8 @@ export function randomInt(min: number, max: number): number {
 /**
  * Makes a delay
  */
-export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
+export const sleep = (delay: number) =>
+  new Promise((resolve) => setTimeout(resolve, delay));
 
 /**
  * Gets step for price
@@ -57,20 +60,24 @@ export function chunkArray<T>(sourceArray: T[], chunkSize: number): T[][] {
  * get sleep interval depending on allowed work time
  */
 export function calculateSleep({
-  current, start, end
+  current,
+  start,
+  end,
 }: {
-  current: number, start: number, end: number
+  current: number;
+  start: number;
+  end: number;
 }) {
   let pause = 0;
 
   if (end > start) {
     if (current < start) {
-      pause = (start - current);
+      pause = start - current;
     } else if (current > end) {
       pause = 24 - current + start;
     }
-  } else if (end < start && (current > end && current < start)) {
-    pause = (start - current);
+  } else if (end < start && current > end && current < start) {
+    pause = start - current;
   }
 
   pause *= duration(1, 'hour').asMilliseconds();
@@ -94,6 +101,11 @@ export function getStandartDeviation(arr: number[]): number {
   return Math.sqrt(
     arr
       .reduce((acc, val) => acc.concat((val - mean) ** 2), [] as number[])
-      .reduce((acc, val) => acc + val, 0) / (arr.length - 1)
+      .reduce((acc, val) => acc + val, 0) /
+      (arr.length - 1)
   );
+}
+
+export function getExpireSbcTime(remainingTime: string[]): number {
+  return 0;
 }

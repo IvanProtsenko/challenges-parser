@@ -1,5 +1,6 @@
-import BaseFields from "./BaseFields";
+import BaseFields from './BaseFields';
 
 export default interface SbcChallenge extends BaseFields {
-    conditions?: string[]
+  price?: number;
+  conditions?: string[];
 }

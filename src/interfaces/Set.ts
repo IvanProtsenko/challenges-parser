@@ -1,6 +1,9 @@
-import BaseFields from "./BaseFields";
-import SbcChallenge from "./Challenge";
+import BaseFields from './BaseFields';
+import SbcChallenge from './Challenge';
 
 export default interface SbcSet extends BaseFields {
-    challenges?: SbcChallenge[]
+  url: string;
+  challenges?: SbcChallenge[];
+  expires_at?: number;
+  repeatable?: boolean;
 }
