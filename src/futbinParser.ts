@@ -8,6 +8,7 @@ import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
 import SbcChallenge from './interfaces/Challenge';
 import { getExpireSbcTime } from './utils/utils';
+import parseChallengeConditions from './parseConditions';
 
 export default class ChallengeFutbinParser {
   constructor(
@@ -91,7 +92,7 @@ export default class ChallengeFutbinParser {
     sbcSet: SbcSet
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
-    // const conditionsFromFutbin = await this.getChallengeConditions(block);
+    const conditionsFromFutbin = await parseChallengeConditions(sbcSet.url);
     // const conditionsOperated = this.operateConditions(conditionsFromFutwiz);
 
     return {
@@ -181,6 +182,7 @@ export default class ChallengeFutbinParser {
     return block
       .find('.set_box_front')
       .find('.top-set-row')
+      .find('.set_name')
       .text()
       .trim();
   }

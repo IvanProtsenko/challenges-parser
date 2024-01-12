@@ -1,5 +1,6 @@
 import { duration } from 'moment';
 import logger from '../monitoring/logger';
+import moment from 'moment';
 
 export function registerExitListener() {
   ['unhandledRejection', 'uncaughtException'].forEach((event) => {
@@ -107,5 +108,23 @@ export function getStandartDeviation(arr: number[]): number {
 }
 
 export function getExpireSbcTime(remainingTime: string[]): number {
-  return 0;
+  try {
+    const [amount, time] = remainingTime;
+    const nowDate = moment().utc();
+    const nextChange = moment()
+      .utc()
+      .set({ hours: 18, minutes: 0, seconds: 0 });
+
+    if (nowDate.hour() >= 18) {
+      nextChange.add(1, 'days');
+    }
+    if (time === 'Days') {
+      nextChange.add(Number(amount), 'days');
+    }
+
+    return nextChange.valueOf();
+  } catch (err) {
+    logger.error('error while checking remaining time', { meta: err });
+    return 0;
+  }
 }
