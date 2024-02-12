@@ -11,7 +11,6 @@ export default async function parseChallengeConditions(url: string) {
     headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
   });
   const cond = parseConditions(response.data);
-  console.log(cond);
 }
 
 // TODO: zod!!!!!!!!!!

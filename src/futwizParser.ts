@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 /* eslint-disable class-methods-use-this */
 import moment, { duration } from 'moment';
-import logger from './monitoring/logger';
+import logger from './api/logger';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
@@ -68,9 +68,11 @@ export default class ChallengeParser {
 
   private convertElementToSet(block: cheerio.Cheerio<any>): SbcSet {
     const { packName, packAmount } = this.getPackAttributes(block);
+    const url = this.getSbcURl(block);
 
     return {
-      url: this.getSbcURl(block),
+      url,
+      id: Number(url.slice(url.lastIndexOf('/'))),
       name: this.getSbcNameFromPage(block),
       tradeable: this.getIfPackTradeable(block),
       pack_name: packName,

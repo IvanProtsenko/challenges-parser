@@ -1,9 +1,11 @@
 import { duration } from 'moment';
 import env from './utils/env';
 import { handleUnexpectedExit, registerExitListener } from './utils/utils';
+import { createClient as createTradeClient } from './../generated/trade';
 import ChallengeParser from './futwizParser';
-import logger from './monitoring/logger';
 import ChallengeFutbinParser from './futbinParser';
+import DB from './api/DB';
+import { setConsoleLogs, setDatadogLogs, setFileLogs } from './api/logger';
 
 main().catch(handleUnexpectedExit);
 setTimeout(() => {
@@ -19,12 +21,21 @@ async function main() {
 }
 
 async function parseChallenges() {
-  //   const proxyManager = new ProxyManager(config.maxFutbinProxyThreads);
-  //   await proxyManager.init();
-  //   const parsingPauseDelay = config.parsingPausePerProxySet(proxyManager.proxySets);
+  setConsoleLogs();
+  setFileLogs();
+  setDatadogLogs();
+
+  const db = new DB(
+    createTradeClient({
+      url: env.TRADE_ENDPOINT,
+      headers: {
+        'x-hasura-admin-secret': env.TRADE_HASURA_ADMIN_SECRET,
+      },
+    })
+  );
 
   const fwParser = new ChallengeParser();
-  const fbParser = new ChallengeFutbinParser();
+  const fbParser = new ChallengeFutbinParser(db);
 
   // await fwParser.requestTradeableChallenges();
   await fbParser.requestTradeableChallenges();

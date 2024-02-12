@@ -1,6 +1,9 @@
 import { duration } from 'moment';
-import logger from '../monitoring/logger';
+import logger from '../api/logger';
 import moment from 'moment';
+import SbcChallenge from '../interfaces/Challenge';
+import SbcSet from '../interfaces/Set';
+import { current_challenges_insert_input } from '../../generated/trade';
 
 export function registerExitListener() {
   ['unhandledRejection', 'uncaughtException'].forEach((event) => {
@@ -127,4 +130,18 @@ export function getExpireSbcTime(remainingTime: string[]): number {
     logger.error('error while checking remaining time', { meta: err });
     return 0;
   }
+}
+
+export function sbcToDBChallenge(
+  set: SbcSet
+): current_challenges_insert_input[] {
+  return set.challenges!.map((challenge) => {
+    return {
+      sbc_id: set.id,
+      name: challenge.name,
+      pack_name: challenge.pack_name,
+      pack_amount: challenge.pack_amount,
+      futbin_price: challenge.price,
+    };
+  });
 }

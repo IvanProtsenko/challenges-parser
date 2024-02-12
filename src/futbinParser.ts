@@ -2,17 +2,19 @@
 /* eslint-disable no-console */
 /* eslint-disable class-methods-use-this */
 import moment, { duration } from 'moment';
-import logger from './monitoring/logger';
+import logger from './api/logger';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
 import SbcChallenge from './interfaces/Challenge';
-import { getExpireSbcTime } from './utils/utils';
+import { getExpireSbcTime, sbcToDBChallenge } from './utils/utils';
 import parseChallengeConditions from './parseConditions';
+import DB from './api/DB';
 
 export default class ChallengeFutbinParser {
   constructor(
     // private readonly parser: WebParser,
+    private db: DB,
     private futbinUrl = 'https://www.futbin.com',
     protected lastAssertedId = 0,
     protected maxLastUpdateTime = moment
@@ -42,8 +44,10 @@ export default class ChallengeFutbinParser {
         tradeableSet.challenges = challenges;
       }
       for (const tradeableSet of tradeableSets) {
-        console.log(tradeableSet);
+        const challenges = sbcToDBChallenge(tradeableSet);
+        await this.db.setCurrentChallenges(challenges);
       }
+      await this.db.setCurrentSbc(tradeableSets);
 
       if (!response || response.data.error) {
         console.error(`error`);
@@ -75,9 +79,12 @@ export default class ChallengeFutbinParser {
   private convertElementToSet(block: cheerio.Cheerio<any>): SbcSet {
     const { packName, packAmount } = this.getPackAttributesSbc(block);
     const { expiresAt, repeatable } = this.getExpiresRepeatableSbc(block);
+    const url = this.getSbcURl(block);
+    const id = this.getIdFromUrl(url);
 
     return {
-      url: this.getSbcURl(block),
+      url,
+      id,
       name: this.getSbcNameFromPage(block),
       tradeable: true,
       pack_name: packName,
@@ -86,6 +93,9 @@ export default class ChallengeFutbinParser {
       repeatable,
     };
   }
+
+  private getIdFromUrl = (url: string): number =>
+    Number(url.slice(url.lastIndexOf('/') + 1));
 
   private async convertElementToChallenge(
     block: cheerio.Cheerio<any>,
