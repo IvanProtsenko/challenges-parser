@@ -37,9 +37,6 @@ export default class ChallengeParser {
         const challenges = await this.getSetChallenges(tradeableSet); // maybe promise all
         tradeableSet.challenges = challenges;
       }
-      for (const tradeableSet of tradeableSets) {
-        console.log(tradeableSet.challenges);
-      }
 
       if (!response || response.data.error) {
         console.error(`error`);
@@ -107,17 +104,14 @@ export default class ChallengeParser {
   }
 
   private getChallengeURl(block: cheerio.Cheerio<any>): string {
-    const aHrefUrl =
-      block
-        .find('.sbc-info')
-        .find('a')
-        .attr('href') || '';
+    const aHrefUrl = block.find('.sbc-info').find('a').attr('href') || '';
     return this.futwizUrl + aHrefUrl;
   }
 
-  private getPackAttributes(
-    block: cheerio.Cheerio<any>
-  ): { packName: string; packAmount: number } {
+  private getPackAttributes(block: cheerio.Cheerio<any>): {
+    packName: string;
+    packAmount: number;
+  } {
     const packAttrArray: string = block
       .find('.sbc-rewards')
       .first()
@@ -154,19 +148,11 @@ export default class ChallengeParser {
   }
 
   private getSbcNameFromPage(block: cheerio.Cheerio<any>): string {
-    return block
-      .find('.sbc-data')
-      .find('.sbc-name')
-      .first()
-      .text();
+    return block.find('.sbc-data').find('.sbc-name').first().text();
   }
 
   private getIfPackTradeable(block: cheerio.Cheerio<any>): boolean {
-    return block
-      .find('.sbc-rewards')
-      .first()
-      .text()
-      .includes('Tradeable')
+    return block.find('.sbc-rewards').first().text().includes('Tradeable')
       ? true
       : false;
   }

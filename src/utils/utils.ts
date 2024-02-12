@@ -135,13 +135,18 @@ export function getExpireSbcTime(remainingTime: string[]): number {
 export function sbcToDBChallenge(
   set: SbcSet
 ): current_challenges_insert_input[] {
-  return set.challenges!.map((challenge) => {
-    return {
+  const challenges = [];
+
+  for (const [index, challenge] of set.challenges!.entries()) {
+    challenges.push({
       sbc_id: set.id,
       name: challenge.name,
       pack_name: challenge.pack_name,
       pack_amount: challenge.pack_amount,
       futbin_price: challenge.price,
-    };
-  });
+      challenge_index: index + 1,
+    });
+  }
+
+  return challenges;
 }

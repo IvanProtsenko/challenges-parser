@@ -16,10 +16,7 @@ export default class DB {
       const response = await this.graphqlTradeClient.mutation({
         insert_current_sbc: {
           __args: {
-            objects: sets.map((set) => {
-              delete set.challenges;
-              return set;
-            }),
+            objects: sets,
             on_conflict: {
               constraint: 'current_sbc_pkey',
               update_columns: [],
@@ -43,7 +40,12 @@ export default class DB {
             objects: challenges,
             on_conflict: {
               constraint: 'current_challenges_pkey',
-              update_columns: [],
+              update_columns: [
+                'futbin_price',
+                'challenge_index',
+                'pack_name',
+                'pack_amount',
+              ],
             },
           },
           affected_rows: true,

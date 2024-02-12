@@ -1,6 +1,10 @@
 import { duration } from 'moment';
 import env from './utils/env';
-import { handleUnexpectedExit, registerExitListener } from './utils/utils';
+import {
+  handleUnexpectedExit,
+  registerExitListener,
+  sleep,
+} from './utils/utils';
 import { createClient as createTradeClient } from './../generated/trade';
 import ChallengeParser from './futwizParser';
 import ChallengeFutbinParser from './futbinParser';
@@ -15,7 +19,7 @@ setTimeout(() => {
 async function main() {
   registerExitListener();
 
-  parseChallenges();
+  await parseChallenges();
 
   setTimeout(() => process.exit(0), 5000);
 }
@@ -38,5 +42,10 @@ async function parseChallenges() {
   const fbParser = new ChallengeFutbinParser(db);
 
   // await fwParser.requestTradeableChallenges();
-  await fbParser.requestTradeableChallenges();
+  await fbParser.requestTradeableChallenges('Challenges', true);
+  await sleep(5000);
+  await fbParser.requestTradeableChallenges('Upgrades', false);
+
+  console.log('finished!');
+  return;
 }
