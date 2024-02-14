@@ -43,7 +43,6 @@ export default class DB {
               update_columns: [
                 'futbin_price',
                 'challenge_index',
-                'pack_name',
                 'pack_amount',
               ],
             },

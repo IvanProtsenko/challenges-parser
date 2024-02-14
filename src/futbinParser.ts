@@ -10,6 +10,7 @@ import SbcChallenge from './interfaces/Challenge';
 import { getExpireSbcTime, sbcToDBChallenge } from './utils/utils';
 import parseChallengeConditions from './parseConditions';
 import DB from './api/DB';
+import { SetType } from '.';
 
 export default class ChallengeFutbinParser {
   constructor(
@@ -18,7 +19,7 @@ export default class ChallengeFutbinParser {
     private futbinUrl = 'https://www.futbin.com'
   ) {}
 
-  public async requestTradeableChallenges(page: string, tradeable: boolean) {
+  public async requestTradeableChallenges(page: SetType, tradeable: boolean) {
     try {
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
       const response = await axios.get(url, {
@@ -41,6 +42,15 @@ export default class ChallengeFutbinParser {
       for (const tradeableSet of tradeableSets) {
         const challenges = await this.getSetChallenges(tradeableSet, tradeable); // maybe promise all
         tradeableSet.challenges = challenges;
+        if (tradeableSet.challenges.length > 1) {
+          tradeableSet.challenges.push({
+            name: tradeableSet.name + '_global',
+            tradeable: tradeable,
+            pack_name: tradeableSet.pack_name,
+            pack_amount: tradeableSet.pack_amount,
+            price: 0,
+          });
+        }
       }
 
       for (const tradeableSet of tradeableSets) {

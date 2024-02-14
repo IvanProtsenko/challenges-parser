@@ -144,7 +144,7 @@ export function sbcToDBChallenge(
       pack_name: challenge.pack_name,
       pack_amount: challenge.pack_amount,
       futbin_price: challenge.price,
-      challenge_index: index + 1,
+      challenge_index: challenge.name === set.name + '_global' ? 0 : index + 1,
     });
   }
 

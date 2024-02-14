@@ -11,6 +11,16 @@ import ChallengeFutbinParser from './futbinParser';
 import DB from './api/DB';
 import { setConsoleLogs, setDatadogLogs, setFileLogs } from './api/logger';
 
+export type SetType =
+  | 'Challenges'
+  | 'Upgrades'
+  | 'Foundations'
+  | 'Players'
+  | 'Icons'
+  | 'EXPIRED'
+  | 'ALL'
+  | 'NEW';
+
 main().catch(handleUnexpectedExit);
 setTimeout(() => {
   throw new Error('timeout');
@@ -45,6 +55,8 @@ async function parseChallenges() {
   await fbParser.requestTradeableChallenges('Challenges', true);
   await sleep(5000);
   await fbParser.requestTradeableChallenges('Upgrades', false);
+  await sleep(5000);
+  await fbParser.requestTradeableChallenges('Foundations', false);
 
   console.log('finished!');
   return;
