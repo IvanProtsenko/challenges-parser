@@ -11,6 +11,13 @@ import { getExpireSbcTime, sbcToDBChallenge } from './utils/utils';
 import parseChallengeConditions from './parseConditions';
 import DB from './api/DB';
 import { SetType } from '.';
+import { Condition } from 'mongodb';
+import { Conditions } from './interfaces/Conditions';
+import {
+  challenge_conditions_filters_arr_rel_insert_input,
+  challenge_conditions_filters_insert_input,
+  challenge_conditions_simple_insert_input,
+} from '../generated/trade';
 
 export default class ChallengeFutbinParser {
   constructor(
@@ -79,9 +86,25 @@ export default class ChallengeFutbinParser {
         .map((el: any) => selector(el));
 
       const challenges: SbcChallenge[] = [];
-      for (const block of blocks) {
+
+      const conditionsFromFutbin = await parseChallengeConditions(sbcSet.url);
+      console.log(conditionsFromFutbin);
+
+      for (const [index, block] of blocks.entries()) {
+        const rating = conditionsFromFutbin[index].minSquadRating!;
+        const suitableConditionFilters: challenge_conditions_filters_insert_input[] =
+          conditionsFromFutbin[index].filters!;
+        const suitableConditionSimple: challenge_conditions_simple_insert_input[] =
+          conditionsFromFutbin[index].distributions!;
         challenges.push(
-          await this.convertElementToChallenge(block, sbcSet, tradeable)
+          await this.convertElementToChallenge(
+            block,
+            sbcSet,
+            tradeable,
+            rating,
+            suitableConditionFilters,
+            suitableConditionSimple
+          )
         );
       }
 
@@ -116,10 +139,13 @@ export default class ChallengeFutbinParser {
   private async convertElementToChallenge(
     block: cheerio.Cheerio<any>,
     sbcSet: SbcSet,
-    tradeable: boolean
+    tradeable: boolean,
+    minSquadRating: number,
+    filters: challenge_conditions_filters_insert_input[],
+    simple: challenge_conditions_simple_insert_input[]
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
-    // const conditionsFromFutbin = await parseChallengeConditions(sbcSet.url);
+
     // const conditionsOperated = this.operateConditions(conditionsFromFutwiz);
 
     return {
@@ -128,7 +154,9 @@ export default class ChallengeFutbinParser {
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,
       price: this.getChallengePrice(block),
-      //   conditions: conditionsOperated,
+      min_squad_rating: minSquadRating,
+      challenge_conditions_filters: filters,
+      challenge_conditions_simples: simple,
     };
   }
 

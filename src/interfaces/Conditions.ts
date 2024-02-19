@@ -27,23 +27,11 @@ export type SlotFilter = {
   type: ConditionType;
 };
 
-const FILTER_PRIORITIES = new FreezableMap<PlayerProperty, number>([
-  ['club', 10000],
-  ['nation', 1000],
-  ['league', 100],
-  ['rating', 10],
-  ['rarity', 1],
-]);
-
 export interface ConditionValue {
   property: PlayerProperty;
-  value: number | string | string[] | number[];
+  value: string;
   count: number;
   operation: Operation;
-}
-
-interface NeededConditionValue extends ConditionValue {
-  type: ConditionType;
 }
 
 export interface Conditions {

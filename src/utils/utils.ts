@@ -3,7 +3,11 @@ import logger from '../api/logger';
 import moment from 'moment';
 import SbcChallenge from '../interfaces/Challenge';
 import SbcSet from '../interfaces/Set';
-import { current_challenges_insert_input } from '../../generated/trade';
+import {
+  challenge_conditions_filters_arr_rel_insert_input,
+  challenge_conditions_simple_arr_rel_insert_input,
+  current_challenges_insert_input,
+} from '../../generated/trade';
 
 export function registerExitListener() {
   ['unhandledRejection', 'uncaughtException'].forEach((event) => {
@@ -138,6 +142,19 @@ export function sbcToDBChallenge(
   const challenges = [];
 
   for (const [index, challenge] of set.challenges!.entries()) {
+    const filters: challenge_conditions_filters_arr_rel_insert_input | null =
+      challenge.challenge_conditions_filters
+        ? {
+            data: challenge.challenge_conditions_filters!,
+          }
+        : null;
+    const simple: challenge_conditions_simple_arr_rel_insert_input | null =
+      challenge.challenge_conditions_simples
+        ? {
+            data: challenge.challenge_conditions_simples!,
+          }
+        : null;
+
     challenges.push({
       sbc_id: set.id,
       name: challenge.name,
@@ -145,8 +162,13 @@ export function sbcToDBChallenge(
       pack_amount: challenge.pack_amount,
       futbin_price: challenge.price,
       challenge_index: challenge.name === set.name + '_global' ? 0 : index + 1,
+      min_squad_rating: challenge.min_squad_rating || null,
+      challenge_conditions_filters: filters,
+      challenge_conditions_simples: simple,
     });
   }
+
+  console.log(challenges);
 
   return challenges;
 }

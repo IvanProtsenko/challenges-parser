@@ -11,6 +11,7 @@ export default async function parseChallengeConditions(url: string) {
     headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
   });
   const cond = parseConditions(response.data);
+  return cond;
 }
 
 // TODO: zod!!!!!!!!!!
@@ -28,9 +29,7 @@ function parseConditions(html: string) {
     $(el)
       .find('div')
       .each((__, element) => {
-        const text = $(element)
-          .text()
-          .toLowerCase();
+        const text = $(element).text().toLowerCase();
 
         // clubs, nations, leagues
         if (text.includes('players from')) {
@@ -56,7 +55,7 @@ function parseConditions(html: string) {
             conditions.filters!.push({
               property,
               count,
-              value,
+              value: JSON.stringify(value),
               operation: 'in',
             });
           }
@@ -67,7 +66,7 @@ function parseConditions(html: string) {
           conditions.filters!.push({
             property: 'rarity',
             count,
-            value: 1,
+            value: JSON.stringify(1),
             operation: 'eq',
           });
           // level
@@ -78,12 +77,13 @@ function parseConditions(html: string) {
           conditions.filters!.push({
             property: 'rating',
             count: 11,
-            value,
+            value: JSON.stringify(value),
             operation: 'gt',
           });
           // partial level
-        } else if (text.match(/(gold | silver) players/)) {
-          const type = text.match(/(gold | silver) players/)![1];
+        } else if (text.match(/(gold | silver)+players/)) {
+          console.log('match!');
+          const type = text.match(/(gold | silver)+players/)![1];
           const count = Number(text.split(/min/i).at(-1)!);
 
           conditions.filters!.push({
@@ -129,6 +129,8 @@ function parseConditions(html: string) {
           // rating
         } else if (text.includes('squad rating')) {
           conditions.minSquadRating = Number(text.split(/min/i).at(-1)!);
+        } else {
+          console.log('unknown!', text);
         }
       });
 

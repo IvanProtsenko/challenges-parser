@@ -44,6 +44,7 @@ export default class DB {
                 'futbin_price',
                 'challenge_index',
                 'pack_amount',
+                'min_squad_rating',
               ],
             },
           },

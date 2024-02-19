@@ -53,10 +53,10 @@ async function parseChallenges() {
 
   // await fwParser.requestTradeableChallenges();
   await fbParser.requestTradeableChallenges('Challenges', true);
-  await sleep(5000);
-  await fbParser.requestTradeableChallenges('Upgrades', false);
-  await sleep(5000);
-  await fbParser.requestTradeableChallenges('Foundations', false);
+  // await sleep(5000);
+  // await fbParser.requestTradeableChallenges('Upgrades', false);
+  // await sleep(5000);
+  // await fbParser.requestTradeableChallenges('Foundations', false);
 
   console.log('finished!');
   return;
