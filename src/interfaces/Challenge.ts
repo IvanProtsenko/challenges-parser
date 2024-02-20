@@ -10,6 +10,7 @@ export default interface SbcChallenge extends BaseFields {
   min_squad_rating?: number;
   chemistry?: number;
   players_number: number;
+  formation?: string;
   challenge_conditions_filters?: challenge_conditions_filters_insert_input[];
   challenge_conditions_simples?: challenge_conditions_simple_insert_input[];
 }

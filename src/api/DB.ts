@@ -1,5 +1,7 @@
 import {
   Client as GqlTradeClient,
+  challenge_conditions_filters,
+  challenge_conditions_filters_insert_input,
   current_challenges_insert_input,
 } from '../../generated/trade';
 import SbcSet from '../interfaces/Set';
@@ -47,6 +49,7 @@ export default class DB {
                 'min_squad_rating',
                 'chemistry',
                 'players_number',
+                'formation',
               ],
             },
           },
@@ -59,4 +62,8 @@ export default class DB {
       return [];
     }
   }
+
+  async setChallengeFilter(
+    filter: challenge_conditions_filters_insert_input[]
+  ) {}
 }

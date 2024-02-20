@@ -155,22 +155,30 @@ export function sbcToDBChallenge(
           }
         : null;
 
+    const {
+      name,
+      pack_name,
+      pack_amount,
+      chemistry,
+      players_number,
+      formation,
+    } = challenge;
+
     challenges.push({
       sbc_id: set.id,
-      name: challenge.name,
-      pack_name: challenge.pack_name,
-      pack_amount: challenge.pack_amount,
+      name,
+      pack_name,
+      pack_amount,
       futbin_price: challenge.price,
       challenge_index: challenge.name === set.name + '_global' ? 0 : index + 1,
       min_squad_rating: challenge.min_squad_rating || null,
-      chemistry: challenge.chemistry,
-      players_number: challenge.players_number,
+      chemistry,
+      players_number,
+      formation,
       challenge_conditions_filters: filters,
       challenge_conditions_simples: simple,
     });
   }
-
-  console.log(challenges);
 
   return challenges;
 }

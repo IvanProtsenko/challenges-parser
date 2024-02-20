@@ -82,7 +82,6 @@ function parseConditions(html: string) {
           });
           // partial level
         } else if (text.match(/(gold | silver)+players/)) {
-          console.log('match!');
           const type = text.match(/(gold | silver)+players/)![1];
           const count = Number(text.split(/min/i).at(-1)!);
 

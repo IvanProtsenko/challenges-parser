@@ -82,14 +82,12 @@ export default class ChallengeFutbinParser {
         headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
       });
       const selector = cheerio.load(response.data);
-      const blocks = selector('.chal_box')
+      const blocks = selector('.main_chal_box')
         .toArray()
         .map((el: any) => selector(el));
 
       const challenges: SbcChallenge[] = [];
-
       const conditionsFromFutbin = await parseChallengeConditions(sbcSet.url);
-      console.log(conditionsFromFutbin);
 
       for (const [index, block] of blocks.entries()) {
         challenges.push(
@@ -137,8 +135,7 @@ export default class ChallengeFutbinParser {
     condition: Conditions
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
-
-    // const conditionsOperated = this.operateConditions(conditionsFromFutwiz);
+    const formation = await this.getChallengeFormation(block);
 
     return {
       name: this.getChallengeNameFromPage(block),
@@ -149,6 +146,7 @@ export default class ChallengeFutbinParser {
       min_squad_rating: condition.minSquadRating,
       chemistry: condition.chemistry,
       players_number: condition.playersNumber!,
+      formation,
       challenge_conditions_filters: condition.filters!,
       challenge_conditions_simples: condition.distributions!,
     };
@@ -211,25 +209,6 @@ export default class ChallengeFutbinParser {
     return { packName, packAmount };
   }
 
-  //   private async getChallengeConditions(
-  //     block: cheerio.Cheerio<any>
-  //   ): Promise<string[]> {
-  //     const conditionsText = selector('.sbc-req')
-  //       .toArray()
-  //       .map((el: any) => selector(el).text());
-  //     return conditionsText.map((conditionText) =>
-  //       conditionText
-  //         .split('\n')
-  //         .filter((splittedText) => splittedText !== '')
-  //         .join()
-  //     );
-  //   }
-
-  // TODO interfaces & operating
-  private operateConditions(conditions: string[]): string[] {
-    return conditions;
-  }
-
   private getSbcNameFromPage(block: cheerio.Cheerio<any>): string {
     return block
       .find('.set_box_front')
@@ -245,5 +224,22 @@ export default class ChallengeFutbinParser {
 
   private getChallengePrice(block: cheerio.Cheerio<any>): number {
     return Number(block.find('.est_chal_prices_holder').attr('data-ps-price'));
+  }
+
+  private async getChallengeFormation(
+    block: cheerio.Cheerio<any>
+  ): Promise<string> {
+    const url = this.futbinUrl + block.find('a.chal_view_btn').attr('href');
+
+    if (url) {
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
+      });
+      const selector = cheerio.load(response.data);
+      const formation = selector('.chal_formation_text').text().trim();
+      return formation;
+    }
+
+    return 'error';
   }
 }
