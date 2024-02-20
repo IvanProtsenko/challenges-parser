@@ -129,6 +129,10 @@ function parseConditions(html: string) {
           // rating
         } else if (text.includes('squad rating')) {
           conditions.minSquadRating = Number(text.split(/min/i).at(-1)!);
+        } else if (text.includes('chemistry')) {
+          conditions.chemistry = Number(text.split(/min/i).at(-1)!);
+        } else if (text.includes('# of players')) {
+          conditions.playersNumber = Number(text.split(/:/i).at(-1)!);
         } else {
           console.log('unknown!', text);
         }

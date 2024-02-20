@@ -95,6 +95,7 @@ export default class ChallengeParser {
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,
       conditions: conditionsOperated,
+      players_number: 11,
     };
   }
 

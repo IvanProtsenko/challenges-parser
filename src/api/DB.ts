@@ -45,6 +45,8 @@ export default class DB {
                 'challenge_index',
                 'pack_amount',
                 'min_squad_rating',
+                'chemistry',
+                'players_number',
               ],
             },
           },

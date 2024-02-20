@@ -163,6 +163,8 @@ export function sbcToDBChallenge(
       futbin_price: challenge.price,
       challenge_index: challenge.name === set.name + '_global' ? 0 : index + 1,
       min_squad_rating: challenge.min_squad_rating || null,
+      chemistry: challenge.chemistry,
+      players_number: challenge.players_number,
       challenge_conditions_filters: filters,
       challenge_conditions_simples: simple,
     });

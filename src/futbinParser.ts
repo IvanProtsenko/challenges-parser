@@ -55,6 +55,7 @@ export default class ChallengeFutbinParser {
             tradeable: tradeable,
             pack_name: tradeableSet.pack_name,
             pack_amount: tradeableSet.pack_amount,
+            players_number: 0,
             price: 0,
           });
         }
@@ -91,19 +92,12 @@ export default class ChallengeFutbinParser {
       console.log(conditionsFromFutbin);
 
       for (const [index, block] of blocks.entries()) {
-        const rating = conditionsFromFutbin[index].minSquadRating!;
-        const suitableConditionFilters: challenge_conditions_filters_insert_input[] =
-          conditionsFromFutbin[index].filters!;
-        const suitableConditionSimple: challenge_conditions_simple_insert_input[] =
-          conditionsFromFutbin[index].distributions!;
         challenges.push(
           await this.convertElementToChallenge(
             block,
             sbcSet,
             tradeable,
-            rating,
-            suitableConditionFilters,
-            suitableConditionSimple
+            conditionsFromFutbin[index]
           )
         );
       }
@@ -140,9 +134,7 @@ export default class ChallengeFutbinParser {
     block: cheerio.Cheerio<any>,
     sbcSet: SbcSet,
     tradeable: boolean,
-    minSquadRating: number,
-    filters: challenge_conditions_filters_insert_input[],
-    simple: challenge_conditions_simple_insert_input[]
+    condition: Conditions
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
 
@@ -154,9 +146,11 @@ export default class ChallengeFutbinParser {
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,
       price: this.getChallengePrice(block),
-      min_squad_rating: minSquadRating,
-      challenge_conditions_filters: filters,
-      challenge_conditions_simples: simple,
+      min_squad_rating: condition.minSquadRating,
+      chemistry: condition.chemistry,
+      players_number: condition.playersNumber!,
+      challenge_conditions_filters: condition.filters!,
+      challenge_conditions_simples: condition.distributions!,
     };
   }
 

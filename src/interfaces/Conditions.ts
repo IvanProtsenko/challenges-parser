@@ -42,4 +42,6 @@ export interface Conditions {
     count: number;
   }[];
   minSquadRating?: number;
+  chemistry?: number;
+  playersNumber?: number;
 }
