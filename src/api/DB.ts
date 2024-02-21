@@ -63,7 +63,18 @@ export default class DB {
     }
   }
 
-  async setChallengeFilter(
-    filter: challenge_conditions_filters_insert_input[]
-  ) {}
+  async getExistingChallenges() {
+    try {
+      const response = await this.graphqlTradeClient.query({
+        current_challenges: {
+          id: true,
+          name: true,
+        },
+      });
+      return response.current_challenges;
+    } catch (err) {
+      logger.error('DB ERROR: getExistingChallenges error', err);
+      return [];
+    }
+  }
 }

@@ -61,9 +61,17 @@ export default class ChallengeFutbinParser {
         }
       }
 
+      const existingChallenges = await this.db.getExistingChallenges();
       for (const tradeableSet of tradeableSets) {
         const challenges = sbcToDBChallenge(tradeableSet);
-        await this.db.setCurrentChallenges(challenges);
+        const uniqueChallenges = challenges.filter(
+          (challenge) =>
+            !existingChallenges
+              .map((existingChallenge) => existingChallenge.name)
+              .includes(challenge.name!)
+        );
+
+        await this.db.setCurrentChallenges(uniqueChallenges);
       }
 
       if (!response || response.data.error) {
