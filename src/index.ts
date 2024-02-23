@@ -9,7 +9,6 @@ import { createClient as createTradeClient } from './../generated/trade';
 import ChallengeParser from './futwizParser';
 import ChallengeFutbinParser from './futbinParser';
 import DB from './api/DB';
-import { setConsoleLogs, setDatadogLogs, setFileLogs } from './api/logger';
 
 export type SetType =
   | 'Challenges'
@@ -35,10 +34,6 @@ async function main() {
 }
 
 async function parseChallenges() {
-  setConsoleLogs();
-  setFileLogs();
-  setDatadogLogs();
-
   const db = new DB(
     createTradeClient({
       url: env.TRADE_ENDPOINT,

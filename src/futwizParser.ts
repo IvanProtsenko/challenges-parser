@@ -2,7 +2,6 @@
 /* eslint-disable no-console */
 /* eslint-disable class-methods-use-this */
 import moment, { duration } from 'moment';
-import logger from './api/logger';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
@@ -43,7 +42,7 @@ export default class ChallengeParser {
         return null;
       }
     } catch (err) {
-      logger.error('error while requesting sbc', { meta: err });
+      console.log('error while requesting sbc', { meta: err });
     }
   }
 

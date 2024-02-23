@@ -6,7 +6,6 @@ import {
 } from '../../generated/trade';
 import SbcSet from '../interfaces/Set';
 // import { Client as GqlArchiveClient } from '../../generated/archive';
-import logger from './logger';
 
 export default class DB {
   constructor(
@@ -29,7 +28,7 @@ export default class DB {
       });
       return response;
     } catch (err) {
-      logger.error('DB ERROR: setCurrentSbc error', err);
+      console.log('DB ERROR: setCurrentSbc error', err);
       return [];
     }
   }
@@ -58,7 +57,7 @@ export default class DB {
       });
       return response;
     } catch (err) {
-      logger.error('DB ERROR: setCurrentChallenges error', err);
+      console.log('DB ERROR: setCurrentChallenges error', err);
       return [];
     }
   }
@@ -73,7 +72,7 @@ export default class DB {
       });
       return response.current_challenges;
     } catch (err) {
-      logger.error('DB ERROR: getExistingChallenges error', err);
+      console.log('DB ERROR: getExistingChallenges error', err);
       return [];
     }
   }
