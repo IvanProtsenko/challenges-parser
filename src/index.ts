@@ -5,11 +5,7 @@ import { createClient as createTradeClient } from './../generated/trade';
 import ChallengeParser from './futwizParser';
 import ChallengeFutbinParser from './futbinParser';
 import DB from './api/DB';
-import logger, {
-  setConsoleLogs,
-  setDatadogLogs,
-  setFileLogs,
-} from './api/logger';
+import logger, { setConsoleLogs, setFileLogs } from './api/logger';
 
 export type SetType =
   | 'Challenges'
@@ -23,9 +19,6 @@ export type SetType =
 
 async function parseChallenges() {
   try {
-    setConsoleLogs();
-    setFileLogs();
-    setDatadogLogs();
     const nowHours: number = new Date().getUTCHours();
     const nowMinutes: number = new Date().getUTCMinutes();
     logger.debug('running at: ' + nowHours + ':' + nowMinutes);
@@ -65,6 +58,3 @@ async function main() {
 }
 
 main().catch(handleUnexpectedExit);
-setTimeout(() => {
-  throw new Error('timeout');
-}, duration(60, 'minutes').asMilliseconds());
