@@ -1,5 +1,4 @@
 import { duration } from 'moment';
-import logger from '../api/logger';
 import moment from 'moment';
 import SbcChallenge from '../interfaces/Challenge';
 import SbcSet from '../interfaces/Set';
@@ -16,7 +15,7 @@ export function registerExitListener() {
 }
 
 export function handleUnexpectedExit(error: any) {
-  logger.error('FATAL ERROR', {
+  console.log('FATAL ERROR', {
     error: { message: error.message, stack: error.stack },
   });
   setTimeout(() => process.exit(-1), 5000);
@@ -131,7 +130,7 @@ export function getExpireSbcTime(remainingTime: string[]): number {
 
     return nextChange.valueOf();
   } catch (err) {
-    logger.error('error while checking remaining time', { meta: err });
+    console.log('error while checking remaining time', { meta: err });
     return 0;
   }
 }

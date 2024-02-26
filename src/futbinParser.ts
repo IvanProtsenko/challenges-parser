@@ -2,7 +2,6 @@
 /* eslint-disable no-console */
 /* eslint-disable class-methods-use-this */
 import moment, { duration } from 'moment';
-import logger from './api/logger';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
@@ -29,9 +28,11 @@ export default class ChallengeFutbinParser {
   public async requestTradeableChallenges(page: SetType, tradeable: boolean) {
     try {
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
+      console.log(url)
       const response = await axios.get(url, {
-        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
+        headers: { 'User-Agent': 'PostmanRuntime/7.36.3' },
       });
+      console.log('request done')
       const selector = cheerio.load(response.data);
       const blocks = selector('.sbc_set_box:not(.set_box_extra)')
         .toArray()
@@ -79,7 +80,7 @@ export default class ChallengeFutbinParser {
         return null;
       }
     } catch (err) {
-      logger.error('error while requesting sbc', err);
+      console.log('error while requesting sbc', err);
     }
   }
 
@@ -110,7 +111,7 @@ export default class ChallengeFutbinParser {
 
       return challenges;
     } catch (err: any) {
-      logger.info('error in getSetChallenges', err);
+      console.log('error in getSetChallenges', err);
       return [];
     }
   }

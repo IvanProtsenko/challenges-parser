@@ -3,12 +3,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const RequiredEnvVars = [
-  'SERVER_PLAYERS_ENDPOINT',
   'DATADOG_API_KEY',
   'TRADE_ENDPOINT',
   'TRADE_HASURA_ADMIN_SECRET',
-  'ARCHIVE_SERVER_ENDPOINT',
-  'ARCHIVE_SERVER_ENDPOINT_ADMIN_SECRET'
 ] as const;
 const OptionalEnvVars = [
   'PORT',
