@@ -68,6 +68,7 @@ export default class DB {
         current_challenges: {
           id: true,
           name: true,
+          sbc_id: true
         },
       });
       return response.current_challenges;

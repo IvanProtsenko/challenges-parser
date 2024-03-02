@@ -28,11 +28,11 @@ export default class ChallengeFutbinParser {
   public async requestTradeableChallenges(page: SetType, tradeable: boolean) {
     try {
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
-      console.log(url)
+      console.log(url);
       const response = await axios.get(url, {
         headers: { 'User-Agent': 'PostmanRuntime/7.36.3' },
       });
-      console.log('request done')
+      console.log('request done');
       const selector = cheerio.load(response.data);
       const blocks = selector('.sbc_set_box:not(.set_box_extra)')
         .toArray()
@@ -65,12 +65,18 @@ export default class ChallengeFutbinParser {
       const existingChallenges = await this.db.getExistingChallenges();
       for (const tradeableSet of tradeableSets) {
         const challenges = sbcToDBChallenge(tradeableSet);
-        const uniqueChallenges = challenges.filter(
-          (challenge) =>
-            !existingChallenges
-              .map((existingChallenge) => existingChallenge.name)
-              .includes(challenge.name!)
-        );
+        console.log(challenges.length);
+        const uniqueChallenges = challenges.filter((challenge) => {
+          if (
+            existingChallenges.filter(
+              (existingChallenge) =>
+                existingChallenge.name === challenge.name &&
+                existingChallenge.sbc_id === challenge.sbc_id
+            ).length === 0
+          ) {
+            return challenge;
+          }
+        });
 
         await this.db.setCurrentChallenges(uniqueChallenges);
       }
@@ -145,6 +151,7 @@ export default class ChallengeFutbinParser {
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
     const formation = await this.getChallengeFormation(block);
+    const positions = await this.getChallengePositions(block);
 
     return {
       name: this.getChallengeNameFromPage(block),
@@ -247,6 +254,36 @@ export default class ChallengeFutbinParser {
       const selector = cheerio.load(response.data);
       const formation = selector('.chal_formation_text').text().trim();
       return formation;
+    }
+
+    return 'error';
+  }
+
+  private async getChallengePositions(
+    block: cheerio.Cheerio<any>
+  ): Promise<string> {
+    const siblings = block.find('a.chal_view_btn').siblings();
+    const url = this.futbinUrl + siblings[1].attribs.href;
+
+    if (url) {
+      console.log(url);
+      const response = await axios.get(url, {
+        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
+      });
+      const selector = cheerio.load(response.data);
+      const blocks = selector('span.circle-pos')
+        .toArray()
+        .map((el: any) => selector(el));
+      console.log(blocks.length);
+      const area = selector('div[id="area"]');
+      const positions: any[] = [];
+      area.find('.circle-pos').each(function (index, element) {
+        positions.push(selector(element));
+      });
+      // .toArray();
+      // .map((el: any) => selector(el));
+      console.log(positions);
+      // return positions;
     }
 
     return 'error';
