@@ -28,7 +28,6 @@ export default class ChallengeFutbinParser {
   public async requestTradeableChallenges(page: SetType, tradeable: boolean) {
     try {
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
-      console.log(url);
       const response = await axios.get(url, {
         headers: { 'User-Agent': 'PostmanRuntime/7.36.3' },
       });
@@ -65,7 +64,6 @@ export default class ChallengeFutbinParser {
       const existingChallenges = await this.db.getExistingChallenges();
       for (const tradeableSet of tradeableSets) {
         const challenges = sbcToDBChallenge(tradeableSet);
-        console.log(challenges.length);
         const uniqueChallenges = challenges.filter((challenge) => {
           if (
             existingChallenges.filter(
@@ -151,7 +149,7 @@ export default class ChallengeFutbinParser {
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
     const formation = await this.getChallengeFormation(block);
-    const positions = await this.getChallengePositions(block);
+    const formationFromPage = await this.getChallengeFormationFromPage(block);
 
     return {
       name: this.getChallengeNameFromPage(block),
@@ -162,7 +160,7 @@ export default class ChallengeFutbinParser {
       min_squad_rating: condition.minSquadRating,
       chemistry: condition.chemistry,
       players_number: condition.playersNumber!,
-      formation,
+      formation: formationFromPage || formation,
       challenge_conditions_filters: condition.filters!,
       challenge_conditions_simples: condition.distributions!,
     };
@@ -259,33 +257,27 @@ export default class ChallengeFutbinParser {
     return 'error';
   }
 
-  private async getChallengePositions(
+  private async getChallengeFormationFromPage(
     block: cheerio.Cheerio<any>
   ): Promise<string> {
     const siblings = block.find('a.chal_view_btn').siblings();
     const url = this.futbinUrl + siblings[1].attribs.href;
 
     if (url) {
-      console.log(url);
       const response = await axios.get(url, {
         headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
       });
       const selector = cheerio.load(response.data);
-      const blocks = selector('span.circle-pos')
-        .toArray()
-        .map((el: any) => selector(el));
-      console.log(blocks.length);
-      const area = selector('div[id="area"]');
-      const positions: any[] = [];
-      area.find('.circle-pos').each(function (index, element) {
-        positions.push(selector(element));
-      });
-      // .toArray();
-      // .map((el: any) => selector(el));
-      console.log(positions);
-      // return positions;
+      const area = selector('div.challenge_requirements').toArray();
+      for (const [index, block] of area.entries()) {
+        const formationBlock = selector(block).attr('data-chal-reqs');
+        if (formationBlock) {
+          const formation = JSON.parse(formationBlock).formation;
+          return formation;
+        }
+      }
     }
 
-    return 'error';
+    return '';
   }
 }
