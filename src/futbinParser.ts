@@ -273,11 +273,22 @@ export default class ChallengeFutbinParser {
         const formationBlock = selector(block).attr('data-chal-reqs');
         if (formationBlock) {
           const formation = JSON.parse(formationBlock).formation;
-          return formation;
+          const formattedFormation = this.formatFormation(formation);
+          return formattedFormation;
         }
       }
     }
 
     return '';
+  }
+
+  private formatFormation(formation: string): string {
+    const splittedFormation = formation.split('-');
+    const baseFormation = splittedFormation[0].split('').join('-');
+    if (splittedFormation.length === 1) {
+      return baseFormation;
+    } else {
+      return baseFormation + '[' + splittedFormation[1] + ']';
+    }
   }
 }
