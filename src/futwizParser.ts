@@ -6,6 +6,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
 import SbcChallenge from './interfaces/Challenge';
+import { sleep } from './utils/utils';
 
 export default class ChallengeParser {
   constructor(
@@ -30,11 +31,24 @@ export default class ChallengeParser {
       for (const block of blocks) {
         sets.push(this.convertElementToSet(block));
       }
-      const tradeableSets = sets.filter((set) => set.tradeable === true);
+      // const tradeableSets = sets.filter((set) => set.tradeable === true);
+      const tradeableSets = [];
 
-      for (const tradeableSet of tradeableSets) {
+      for (const tradeableSet of sets) {
         const challenges = await this.getSetChallenges(tradeableSet); // maybe promise all
-        tradeableSet.challenges = challenges;
+        if (
+          challenges.filter((challenge) => challenge.tradeable === true)
+            .length > 0 ||
+          tradeableSet.tradeable === true
+        ) {
+          tradeableSet.challenges = challenges;
+          tradeableSets.push(tradeableSet);
+        }
+      }
+
+      console.log(tradeableSets.length);
+      for (const tradeableSet of tradeableSets) {
+        console.log(tradeableSet.name);
       }
 
       if (!response || response.data.error) {
@@ -47,6 +61,7 @@ export default class ChallengeParser {
   }
 
   private async getSetChallenges(sbcSet: SbcSet) {
+    await sleep(1500);
     const url = sbcSet.url;
     const response = await axios.get(url);
     const selector = cheerio.load(response.data);
@@ -81,11 +96,6 @@ export default class ChallengeParser {
     sbcSet: SbcSet
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributes(block);
-    const challengeUrl = this.getChallengeURl(block);
-    const conditionsFromFutwiz = await this.getChallengeConditions(
-      challengeUrl
-    );
-    const conditionsOperated = this.operateConditions(conditionsFromFutwiz);
 
     return {
       // url: challengeUrl,
@@ -93,7 +103,6 @@ export default class ChallengeParser {
       tradeable: this.getIfPackTradeable(block) || sbcSet.tradeable,
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,
-      conditions: conditionsOperated,
       players_number: 11,
     };
   }

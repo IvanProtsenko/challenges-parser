@@ -12,6 +12,7 @@ export type SetType =
   | 'Foundations'
   | 'Players'
   | 'Icons'
+  | 'Exchanges'
   | 'EXPIRED'
   | 'ALL'
   | 'NEW';
@@ -21,29 +22,29 @@ async function parseChallenges() {
     const nowHours: number = new Date().getUTCHours();
     const nowMinutes: number = new Date().getUTCMinutes();
     logger.debug('running at: ' + nowHours + ':' + nowMinutes);
-    if (nowHours === 18 && nowMinutes === 30) {
-      const db = new DB(
-        createTradeClient({
-          url: env.TRADE_ENDPOINT,
-          headers: {
-            'x-hasura-admin-secret': env.TRADE_HASURA_ADMIN_SECRET,
-          },
-        })
-      );
+    // if (nowHours === 18 && nowMinutes === 30) {
+    const db = new DB(
+      createTradeClient({
+        url: env.TRADE_ENDPOINT,
+        headers: {
+          'x-hasura-admin-secret': env.TRADE_HASURA_ADMIN_SECRET,
+        },
+      })
+    );
 
-      const fwParser = new ChallengeParser();
-      const fbParser = new ChallengeFutbinParser(db);
+    const fwParser = new ChallengeParser();
+    const fbParser = new ChallengeFutbinParser(db);
 
-      // await fwParser.requestTradeableChallenges();
-      await fbParser.requestTradeableChallenges('Challenges', true);
-      // await sleep(5000);
-      // await fbParser.requestTradeableChallenges('Players', true);
-      // await sleep(5000);
-      // await fbParser.requestTradeableChallenges('Foundations', false);
+    await fwParser.requestTradeableChallenges();
+    // await fbParser.requestTradeableChallenges('Challenges', true);
+    // await sleep(5000);
+    // await fbParser.requestTradeableChallenges('Players', true);
+    // await sleep(5000);
+    // await fbParser.requestTradeableChallenges('Foundations', false);
 
-      logger.info('finished!');
-      return;
-    }
+    logger.info('finished!');
+    return;
+    // }
   } catch (err: any) {
     logger.error('error', err);
   }
@@ -54,7 +55,7 @@ async function main() {
   setFileLogs();
   const CHECK_INTERVAL = 60_000;
   parseChallenges();
-  setInterval(() => parseChallenges(), CHECK_INTERVAL);
+  // setInterval(() => parseChallenges(), CHECK_INTERVAL);
 }
 
 main().catch(handleUnexpectedExit);
