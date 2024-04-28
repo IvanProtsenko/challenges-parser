@@ -1,5 +1,5 @@
 import env from './utils/env';
-import { handleUnexpectedExit } from './utils/utils';
+import { handleUnexpectedExit, sleep } from './utils/utils';
 import { createClient as createTradeClient } from './../generated/trade';
 import ChallengeParser from './futwizParser';
 import ChallengeFutbinParser from './futbinParser';
@@ -32,10 +32,24 @@ async function parseChallenges() {
       })
     );
 
+    const futbinTabs: SetType[] = [
+      // 'Foundations',
+      // 'Upgrades',
+      // 'Players',
+      'Challenges',
+      // 'Icons',
+      'Exchanges',
+    ];
+
     const fwParser = new ChallengeParser();
     const fbParser = new ChallengeFutbinParser(db);
 
-    await fwParser.requestTradeableChallenges();
+    const futwizTradeableSets = await fwParser.requestTradeableChallenges();
+
+    for (const tab of futbinTabs) {
+      await fbParser.requestTradeableChallenges(tab, futwizTradeableSets!);
+      await sleep(10000);
+    }
     // await fbParser.requestTradeableChallenges('Challenges', true);
     // await sleep(5000);
     // await fbParser.requestTradeableChallenges('Players', true);

@@ -25,8 +25,12 @@ export default class ChallengeFutbinParser {
     private futbinUrl = 'https://www.futbin.com'
   ) {}
 
-  public async requestTradeableChallenges(page: SetType, tradeable: boolean) {
+  public async requestTradeableChallenges(
+    page: SetType,
+    futwizTradeableSets: SbcSet[]
+  ) {
     try {
+      console.log('typeof: ' + typeof futwizTradeableSets);
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
       const response = await axios.get(url, {
         headers: { 'User-Agent': 'PostmanRuntime/7.36.3' },
@@ -39,20 +43,25 @@ export default class ChallengeFutbinParser {
 
       const sets: SbcSet[] = [];
       for (const block of blocks) {
-        sets.push(this.convertElementToSet(block));
+        sets.push(this.convertElementToSet(block, futwizTradeableSets));
       }
 
       const tradeableSets = sets;
 
+      // UNCOMMENT
       await this.db.setCurrentSbc(tradeableSets);
 
       for (const tradeableSet of tradeableSets) {
-        const challenges = await this.getSetChallenges(tradeableSet, tradeable); // maybe promise all
+        const tradeableForSet = tradeableSet.tradeable;
+        const challenges = await this.getSetChallenges(
+          tradeableSet,
+          futwizTradeableSets
+        ); // maybe promise all
         tradeableSet.challenges = challenges;
         if (tradeableSet.challenges.length > 1) {
           tradeableSet.challenges.push({
             name: tradeableSet.name + '_global',
-            tradeable: tradeable,
+            tradeable: tradeableForSet,
             pack_name: tradeableSet.pack_name,
             pack_amount: tradeableSet.pack_amount,
             players_number: 0,
@@ -76,6 +85,7 @@ export default class ChallengeFutbinParser {
           }
         });
 
+        // UNCOMMENT
         await this.db.setCurrentChallenges(uniqueChallenges);
       }
 
@@ -88,7 +98,7 @@ export default class ChallengeFutbinParser {
     }
   }
 
-  private async getSetChallenges(sbcSet: SbcSet, tradeable: boolean) {
+  private async getSetChallenges(sbcSet: SbcSet, futwizSets: SbcSet[]) {
     try {
       const url = sbcSet.url;
       const response = await axios.get(url, {
@@ -107,7 +117,7 @@ export default class ChallengeFutbinParser {
           await this.convertElementToChallenge(
             block,
             sbcSet,
-            tradeable,
+            futwizSets,
             conditionsFromFutbin[index]
           )
         );
@@ -120,17 +130,23 @@ export default class ChallengeFutbinParser {
     }
   }
 
-  private convertElementToSet(block: cheerio.Cheerio<any>): SbcSet {
+  private convertElementToSet(
+    block: cheerio.Cheerio<any>,
+    futwizSets: SbcSet[]
+  ): SbcSet {
     const { packName, packAmount } = this.getPackAttributesSbc(block);
     const { expiresAt, repeatable } = this.getExpiresRepeatableSbc(block);
     const url = this.getSbcURl(block);
     const id = this.getIdFromUrl(url);
+    const name = this.getSbcNameFromPage(block);
+    const futwizSet = futwizSets.filter((set) => set.name === name);
+    const tradeable = futwizSet.length > 0 ? futwizSet[0].tradeable : false;
 
     return {
       url,
       id,
-      name: this.getSbcNameFromPage(block),
-      tradeable: true,
+      name,
+      tradeable,
       pack_name: packName,
       pack_amount: packAmount,
       expires_at: expiresAt,
@@ -144,15 +160,21 @@ export default class ChallengeFutbinParser {
   private async convertElementToChallenge(
     block: cheerio.Cheerio<any>,
     sbcSet: SbcSet,
-    tradeable: boolean,
+    futwizSets: SbcSet[],
     condition: Conditions
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
     const formation = await this.getChallengeFormation(block);
     const formationFromPage = await this.getChallengeFormationFromPage(block);
+    const name = this.getChallengeNameFromPage(block);
+    const futwizChallenge = futwizSets
+      .filter((set) => set.name === sbcSet.name)[0]
+      .challenges!.filter((challenge) => challenge.name === name)[0];
+
+    const tradeable = futwizChallenge.tradeable;
 
     return {
-      name: this.getChallengeNameFromPage(block),
+      name,
       tradeable,
       pack_name: packName || sbcSet.pack_name,
       pack_amount: packAmount || sbcSet.pack_amount,

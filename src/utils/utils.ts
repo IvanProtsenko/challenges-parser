@@ -161,6 +161,7 @@ export function sbcToDBChallenge(
       chemistry,
       players_number,
       formation,
+      tradeable,
     } = challenge;
 
     challenges.push({
@@ -176,6 +177,7 @@ export function sbcToDBChallenge(
       formation,
       challenge_conditions_filters: filters,
       challenge_conditions_simples: simple,
+      tradeable,
     });
   }
 

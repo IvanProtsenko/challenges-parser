@@ -18,7 +18,7 @@ export default class ChallengeParser {
       .asMilliseconds()
   ) {}
 
-  public async requestTradeableChallenges() {
+  public async requestTradeableChallenges(): Promise<SbcSet[] | null> {
     try {
       const url = `${this.futwizUrl}/en/fc24/squad-building-challenges`;
       const response = await axios.get(url);
@@ -55,8 +55,11 @@ export default class ChallengeParser {
         console.error(`error`);
         return null;
       }
+
+      return tradeableSets;
     } catch (err) {
       console.log('error while requesting sbc', { meta: err });
+      return null;
     }
   }
 
