@@ -10,7 +10,12 @@ export type PlayerProperty =
   | 'level';
 
 export type DistributionPlayerProperty = 'club' | 'league' | 'nation';
-type PropertyDistributionType = 'minSame' | 'maxSame' | 'minDiff' | 'maxDiff';
+type PropertyDistributionType =
+  | 'minSame'
+  | 'maxSame'
+  | 'minDiff'
+  | 'maxDiff'
+  | 'equal';
 type Operation = 'eq' | 'gt' | 'in' | 'nin';
 export enum ConditionType {
   COMMON_FILTER,

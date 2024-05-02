@@ -1,28 +1,24 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
 /* eslint-disable class-methods-use-this */
-import moment, { duration } from 'moment';
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 import SbcSet from './interfaces/Set';
 import SbcChallenge from './interfaces/Challenge';
-import { getExpireSbcTime, sbcToDBChallenge } from './utils/utils';
+import { getExpireSbcTime, sbcToDBChallenge, sleep } from './utils/utils';
 import parseChallengeConditions from './parseConditions';
 import DB from './api/DB';
 import { SetType } from '.';
-import { Condition } from 'mongodb';
 import { Conditions } from './interfaces/Conditions';
-import {
-  challenge_conditions_filters_arr_rel_insert_input,
-  challenge_conditions_filters_insert_input,
-  challenge_conditions_simple_insert_input,
-} from '../generated/trade';
+import ProxyManager, { ProxyClientData } from './proxyManager';
 
 export default class ChallengeFutbinParser {
+  private futbinUrl = 'https://www.futbin.com';
+  private proxyIndex = 1;
+  private proxyClients: ProxyClientData[] = []
+
   constructor(
-    // private readonly parser: WebParser,
     private db: DB,
-    private futbinUrl = 'https://www.futbin.com'
+    private proxyManager: ProxyManager
   ) {}
 
   public async requestTradeableChallenges(
@@ -30,11 +26,19 @@ export default class ChallengeFutbinParser {
     futwizTradeableSets: SbcSet[]
   ) {
     try {
+      this.proxyIndex = 1;
+
       console.log('typeof: ' + typeof futwizTradeableSets);
       const url = `${this.futbinUrl}/squad-building-challenges/${page}`;
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'PostmanRuntime/7.36.3' },
-      });
+
+      this.proxyClients = await this.proxyManager.getProxyClients(200);
+
+      const { response, success } = await this.proxyManager.requestWithTimeout({
+        url,
+        proxyData: this.proxyClients[0],
+        axiosParams: { headers: { 'User-Agent': 'PostmanRuntime/7.30.0' } }
+      })
+      
       console.log('request done');
       const selector = cheerio.load(response.data);
       const blocks = selector('.sbc_set_box:not(.set_box_extra)')
@@ -50,12 +54,15 @@ export default class ChallengeFutbinParser {
 
       // UNCOMMENT
       await this.db.setCurrentSbc(tradeableSets);
+      await sleep(1000);
+
+      
 
       for (const tradeableSet of tradeableSets) {
         const tradeableForSet = tradeableSet.tradeable;
         const challenges = await this.getSetChallenges(
           tradeableSet,
-          futwizTradeableSets
+          futwizTradeableSets,
         ); // maybe promise all
         tradeableSet.challenges = challenges;
         if (tradeableSet.challenges.length > 1) {
@@ -68,6 +75,8 @@ export default class ChallengeFutbinParser {
             price: 0,
           });
         }
+
+        await sleep(5000);
       }
 
       const existingChallenges = await this.db.getExistingChallenges();
@@ -101,9 +110,15 @@ export default class ChallengeFutbinParser {
   private async getSetChallenges(sbcSet: SbcSet, futwizSets: SbcSet[]) {
     try {
       const url = sbcSet.url;
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
-      });
+
+      const { response, success } = await this.proxyManager.requestWithTimeout({
+        url,
+        proxyData: this.proxyClients[this.proxyIndex],
+        axiosParams: { headers: { 'User-Agent': 'PostmanRuntime/7.30.0' } }
+      })
+
+      this.incrementProxyIndex();
+      
       const selector = cheerio.load(response.data);
       const blocks = selector('.main_chal_box')
         .toArray()
@@ -118,7 +133,7 @@ export default class ChallengeFutbinParser {
             block,
             sbcSet,
             futwizSets,
-            conditionsFromFutbin[index]
+            conditionsFromFutbin[index],
           )
         );
       }
@@ -161,17 +176,30 @@ export default class ChallengeFutbinParser {
     block: cheerio.Cheerio<any>,
     sbcSet: SbcSet,
     futwizSets: SbcSet[],
-    condition: Conditions
+    condition: Conditions,
   ): Promise<SbcChallenge> {
     const { packName, packAmount } = this.getPackAttributesChallenge(block);
-    const formation = await this.getChallengeFormation(block);
-    const formationFromPage = await this.getChallengeFormationFromPage(block);
-    const name = this.getChallengeNameFromPage(block);
-    const futwizChallenge = futwizSets
-      .filter((set) => set.name === sbcSet.name)[0]
-      .challenges!.filter((challenge) => challenge.name === name)[0];
 
-    const tradeable = futwizChallenge.tradeable;
+    await sleep(1000);
+    const formation = await this.getChallengeFormation(block, this.proxyClients[this.proxyIndex]);
+    this.incrementProxyIndex();
+    await sleep(1000);
+    const formationFromPage = await this.getChallengeFormationFromPage(block, this.proxyClients[this.proxyIndex]);
+    this.incrementProxyIndex();
+    await sleep(1000);
+
+    const name = this.getChallengeNameFromPage(block);
+    const futwizSet = futwizSets.filter((set) => set.name === sbcSet.name);
+
+    let tradeable = false;
+    if (futwizSet.length > 0) {
+      const futwizChallenge = futwizSet[0].challenges!.filter(
+        (challenge) => challenge.name === name
+      )[0];
+      if (futwizChallenge) {
+        tradeable = futwizChallenge.tradeable;
+      }
+    }
 
     return {
       name,
@@ -183,8 +211,8 @@ export default class ChallengeFutbinParser {
       chemistry: condition.chemistry,
       players_number: condition.playersNumber!,
       formation: formationFromPage || formation,
-      challenge_conditions_filters: condition.filters!,
-      challenge_conditions_simples: condition.distributions!,
+      challenge_conditions_filters: condition.filters ?? undefined,
+      challenge_conditions_simples: condition.distributions ?? undefined,
     };
   }
 
@@ -263,45 +291,63 @@ export default class ChallengeFutbinParser {
   }
 
   private async getChallengeFormation(
-    block: cheerio.Cheerio<any>
+    block: cheerio.Cheerio<any>,
+    proxyData: ProxyClientData
   ): Promise<string> {
-    const url = this.futbinUrl + block.find('a.chal_view_btn').attr('href');
+    try {
+      const url = this.futbinUrl + block.find('a.chal_view_btn').attr('href');
 
-    if (url) {
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
-      });
-      const selector = cheerio.load(response.data);
-      const formation = selector('.chal_formation_text').text().trim();
-      return formation;
+      if (url) {
+        const { response, success } = await this.proxyManager.requestWithTimeout({
+          url,
+          proxyData,
+          axiosParams: { headers: { 'User-Agent': 'PostmanRuntime/7.30.0' } }
+        })
+  
+        const selector = cheerio.load(response.data);
+        const formation = selector('.chal_formation_text').text().trim();
+        return formation;
+      }
+  
+      return '';
+    } catch(err: any) {
+      console.log('error in getChallengeFormation: ' + err);
+      return '';
     }
-
-    return 'error';
   }
 
   private async getChallengeFormationFromPage(
-    block: cheerio.Cheerio<any>
+    block: cheerio.Cheerio<any>,
+    proxyData: ProxyClientData
   ): Promise<string> {
-    const siblings = block.find('a.chal_view_btn').siblings();
-    const url = this.futbinUrl + siblings[1].attribs.href;
-
-    if (url) {
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'PostmanRuntime/7.30.0' },
-      });
-      const selector = cheerio.load(response.data);
-      const area = selector('div.challenge_requirements').toArray();
-      for (const [index, block] of area.entries()) {
-        const formationBlock = selector(block).attr('data-chal-reqs');
-        if (formationBlock) {
-          const formation = JSON.parse(formationBlock).formation;
-          const formattedFormation = this.formatFormation(formation);
-          return formattedFormation;
+    try {
+      const siblings = block.find('a.chal_view_btn').siblings();
+      const url = this.futbinUrl + siblings[1].attribs.href;
+  
+      if (url) {
+        const { response, success } = await this.proxyManager.requestWithTimeout({
+          url,
+          proxyData,
+          axiosParams: { headers: { 'User-Agent': 'PostmanRuntime/7.30.0' } }
+        })
+  
+        const selector = cheerio.load(response.data);
+        const area = selector('div.challenge_requirements').toArray();
+        for (const [index, block] of area.entries()) {
+          const formationBlock = selector(block).attr('data-chal-reqs');
+          if (formationBlock) {
+            const formation = JSON.parse(formationBlock).formation;
+            const formattedFormation = this.formatFormation(formation);
+            return formattedFormation;
+          }
         }
       }
+  
+      return '';
+    } catch (err: any) {
+      console.log('error in getChallengeFormationFromPage: ' + err);
+      return '';
     }
-
-    return '';
   }
 
   private formatFormation(formation: string): string {
@@ -313,4 +359,12 @@ export default class ChallengeFutbinParser {
       return baseFormation + '[' + splittedFormation[1] + ']';
     }
   }
+
+  private incrementProxyIndex() {
+    if(this.proxyIndex === this.proxyClients.length-1) {
+      this.proxyIndex = 0;
+    } else {
+      this.proxyIndex++;
+    }
+  } 
 }

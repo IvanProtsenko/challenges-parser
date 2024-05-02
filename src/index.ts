@@ -5,6 +5,7 @@ import ChallengeParser from './futwizParser';
 import ChallengeFutbinParser from './futbinParser';
 import DB from './api/DB';
 import logger, { setConsoleLogs, setFileLogs } from './api/logger';
+import ProxyManager from './proxyManager';
 
 export type SetType =
   | 'Challenges'
@@ -33,16 +34,21 @@ async function parseChallenges() {
     );
 
     const futbinTabs: SetType[] = [
-      // 'Foundations',
-      // 'Upgrades',
-      // 'Players',
+      'Foundations',
+      'Upgrades',
+      'Players',
       'Challenges',
-      // 'Icons',
+      'Icons',
       'Exchanges',
     ];
 
+    const proxyUrls = await db.getProxiesForParser();
+    const proxyThreads = 200;
+    const proxyManager = new ProxyManager(proxyThreads, proxyUrls);
+    await proxyManager.init();
+
     const fwParser = new ChallengeParser();
-    const fbParser = new ChallengeFutbinParser(db);
+    const fbParser = new ChallengeFutbinParser(db, proxyManager);
 
     const futwizTradeableSets = await fwParser.requestTradeableChallenges();
 
